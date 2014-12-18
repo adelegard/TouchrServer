@@ -1,0 +1,26 @@
+{
+    "applications": {
+        "Touchr": {
+            "applicationId": "4VjSG5KxyFstqIqCloWpgHl4zBUdmXmRRst9DnTc", 
+            "masterKey": "8Y0arOFFfb3OHClfPV31Kkmuff0btEo7UtuLTPWr"
+        }, 
+        "TouchrDev": {
+            "applicationId": "7UOnw3ie8za53wKJ9TO2g8tKMrTdeyJSUfSC2eGg", 
+            "masterKey": "190S7VISxrgvoqi774rKC7nBfvdyddgqnNPUP8Wz"
+        }, 
+        "TouchrProd": {
+            "applicationId": "Y3FhvZEPnszuQbfvcM4uIT2DXSt1Bmo6IGEmCdGx", 
+            "masterKey": "CadsE9AHytSLsVKLuvo6u6yoi0yZJhopLqkqwOff"
+        }, 
+        "TouchrTest": {
+            "applicationId": "PAMarLS2eyfYafzxzmcb7ztR4YeL3OvzOtrNeSnQ", 
+            "masterKey": "ERYYpK8WrjoHwOqp4TVkT9Xjd1WVyzPwgY3Cy3Ob"
+        }, 
+        "_default": {
+            "link": "TouchrDev"
+        }
+    }, 
+    "global": {
+        "parseVersion": "1.2.19"
+    }
+}

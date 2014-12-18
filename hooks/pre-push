@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# run script to check if commit is valid
+if [[ ! -e node_modules ]]; then
+    echo "Installing NPM packages for tests..."
+    npm install > /dev/null 2>&1
+fi
+grunt test

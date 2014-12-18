@@ -1,0 +1,31 @@
+{
+  "name": "Touchr",
+  "version": "0.1.0",
+  "description": "App for touching your friends!",
+  "main": "Gruntfile.js",
+  "scripts": {
+    "postinstall": "grunt postinstall"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adelegard/Touchr.git"
+  },
+  "author": "Alex Delegard",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adelegard/Touchr/issues"
+  },
+  "homepage": "https://github.com/adelegard/Touchr",
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-nodeunit": "~0.4.1",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-mocha-test": "^0.12.0",
+    "mocha": "^1.21.4",
+    "parse": "^1.2.19",
+    "q": "^1.1.2",
+    "underscore": "^1.7.0"
+  }
+}
