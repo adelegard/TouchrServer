@@ -498,7 +498,7 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
             }
         })
     ];
-    
+
     Parse.Promise.when(queries).then(function() {
         if (!userHasTouchType) return;
         var Touch = Parse.Object.extend(constants.TableTouch);
@@ -509,7 +509,7 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
         touch.set(constants.ColumnTouchUserToObjectId, userToObjectId);
         touch.set(constants.ColumnTouchDuration, durationMs);
         touch.set(constants.ColumnTouchTypeObjectId, touchTypeObjectId);
-        
+
         touch.save().then(function(obj) {
             response.success("Successfully touched user: " + userToObjectId);
         }, function(error) {
@@ -527,6 +527,7 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
     var textColor = request.object.get(constants.ColumnTouchTypeTextColor);
     var steps = request.object.get(constants.ColumnTouchTypeSteps);
     var isDefault = request.object.get(constants.ColumnTouchTypeIsDefault);
+    var isPrivate = request.object.get(constants.ColumnTouchTypeIsPrivate);
 
     var hasDurationMsSteps = !_.isUndefined(_.find(steps, function(step) {
         return _.isNumber(step.durationMs);
@@ -556,8 +557,8 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
                 // not the last step
                 step.maxMs = step.minMs + step.durationMs;
             }
-            delete step.durationMs;
             totalDurationMs += step.durationMs;
+            delete step.durationMs;
         });
         request.object.set(constants.ColumnTouchTypeSteps, steps);
     }
@@ -582,6 +583,10 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
         }
         if (!_.isBoolean(isDefault)) {
             errorMsg = "--- isDefault must be a boolean ---";
+            return true;
+        }
+        if (!_.isBoolean(isPrivate)) {
+            errorMsg = "--- isPrivate must be a boolean ---";
             return true;
         }
         if (!_.isString(step.textLongAfter) || step.textLongAfter.length === 0) {

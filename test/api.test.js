@@ -250,13 +250,13 @@ describe('Authentication', function() {
 
         it('can set our user touch types', function(done) {
             Parse.Cloud.run(constants.MethodNames.setUserTouchTypes, {touchTypeObjectIds: _.map(touchTypes, function(touchType) {
-                console.log("touchType.id: " + touchType.id);
+                // console.log("touchType.id: " + touchType.id);
                 return touchType.id;
             })}, {
             success: function(userTouchTypes) {
-                userTouchTypes = _.each(userTouchTypes, function(userTouchType) {
-                    console.log("userTouchType.id: " + userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId]);
-                });
+                // userTouchTypes = _.each(userTouchTypes, function(userTouchType) {
+                //     console.log("userTouchType.id: " + userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId]);
+                // });
                 userTouchTypes.length.should.equal(2);
                 var userTouchType = _.first(userTouchTypes);
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);

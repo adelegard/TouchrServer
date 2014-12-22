@@ -106,6 +106,7 @@ exports.ColumnTouchTypeBgColor = "bgColor";
 exports.ColumnTouchTypeTextColor = "textColor";
 exports.ColumnTouchTypeSteps = "steps";
 exports.ColumnTouchTypeIsDefault = "isDefault";
+exports.ColumnTouchTypeIsPrivate = "isPrivate";
 
 // UserTouchType
 

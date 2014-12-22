@@ -33,6 +33,7 @@ exports.setupData = function() {
     touchType.set("bgColor", "#ffffff");
     touchType.set("textColor", "#777777");
     touchType.set("isDefault", false);
+    touchType.set("isPrivate", false);
     touchType.set("steps", [
     {
         "maxMs": 2000,
@@ -74,6 +75,7 @@ exports.setupData = function() {
     touchType.set("bgColor", "#ffffff");
     touchType.set("textColor", "#777777");
     touchType.set("isDefault", false);
+    touchType.set("isPrivate", false);
     touchType.set("steps", [
     {
         "durationMs": 2000,
