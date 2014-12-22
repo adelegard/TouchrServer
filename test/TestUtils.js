@@ -20,95 +20,93 @@ exports.setupData = function() {
     var setupDefer = Q.defer(),
         users = [],
         touchTypes = [];
-    
+
     // create some users
-    
+
     var touchTypeQueries = [];
-    
+
     // create some touchTypes
     var TouchType = Parse.Object.extend(constants.TableTouchType);
     touchType = new TouchType();
-    
+
     touchType.set("name", "touch");
     touchType.set("bgColor", "#ffffff");
     touchType.set("textColor", "#777777");
     touchType.set("isDefault", false);
     touchType.set("steps", [
-                            {
-                            "maxMs": 2000,
-                            "minMs": 0,
-                            "textLong": "Give them a little touch",
-                            "textLongAfter": "Give them a little touch",
-                            "textNotif": "gave you a little touch",
-                            "textShort": "Touch"
-                            },
-                            {
-                            "maxMs": 4000,
-                            "minMs": 2000,
-                            "textLong": "Give them a little poke",
-                            "textLongAfter": "Give them a little poke",
-                            "textNotif": "gave you a little poke",
-                            "textShort": "Poke"
-                            },
-                            {
-                            "minMs": 4000,
-                            "textLong": "Give them a jab",
-                            "textLongAfter": "Give them a jab",
-                            "textNotif": "gave you a jab",
-                            "textShort": "Jab"
-                            }
-                            ]);
-    
-    touchTypeQueries.push(touchType.save(null, {
-    success: function(obj) {
-        touchTypes.push(obj);
+    {
+        "maxMs": 2000,
+        "minMs": 0,
+        "textLong": "Give them a little touch",
+        "textLongAfter": "Give them a little touch",
+        "textNotif": "gave you a little touch",
+        "textShort": "Touch"
     },
-    error: function(touchType, error) {
-        exports.onTestFailure(error);
+    {
+        "maxMs": 4000,
+        "minMs": 2000,
+        "textLong": "Give them a little poke",
+        "textLongAfter": "Give them a little poke",
+        "textNotif": "gave you a little poke",
+        "textShort": "Poke"
+    },
+    {
+        "minMs": 4000,
+        "textLong": "Give them a jab",
+        "textLongAfter": "Give them a jab",
+        "textNotif": "gave you a jab",
+        "textShort": "Jab"
     }
+    ]);
+
+    touchTypeQueries.push(touchType.save(null, {
+        success: function(obj) {
+            touchTypes.push(obj);
+        },
+        error: function(touchType, error) {
+            exports.onTestFailure(error);
+        }
     }));
-    
+
     touchType = new TouchType();
-    
-    touchType.set("name", "hug");
+
+    touchType.set("name", "poke");
     touchType.set("bgColor", "#ffffff");
     touchType.set("textColor", "#777777");
     touchType.set("isDefault", false);
     touchType.set("steps", [
-                            {
-                            "maxMs": 2000,
-                            "minMs": 0,
-                            "textLong": "Give them a little hug",
-                            "textLongAfter": "Give them a little hug",
-                            "textNotif": "gave you a little hug",
-                            "textShort": "Touch"
-                            },
-                            {
-                            "maxMs": 4000,
-                            "minMs": 2000,
-                            "textLong": "Give them a medium hug",
-                            "textLongAfter": "Give them a medium hug",
-                            "textNotif": "gave you a medium hug",
-                            "textShort": "Poke"
-                            },
-                            {
-                            "minMs": 4000,
-                            "textLong": "Give them a long hug",
-                            "textLongAfter": "Give them a long hug",
-                            "textNotif": "gave you a long hug",
-                            "textShort": "Jab"
-                            }
-                            ]);
-    
-    touchTypeQueries.push(touchType.save(null, {
-    success: function(obj) {
-        touchTypes.push(obj);
+    {
+        "durationMs": 2000,
+        "textLong": "Give them a little hug",
+        "textLongAfter": "Give them a little hug",
+        "textNotif": "gave you a little hug",
+        "textShort": "Touch"
     },
-    error: function(touchType, error) {
-        exports.onTestFailure(error);
+    {
+        "durationMs": 2000,
+        "textLong": "Give them a medium hug",
+        "textLongAfter": "Give them a medium hug",
+        "textNotif": "gave you a medium hug",
+        "textShort": "Poke"
+    },
+    {
+        "durationMs": 2000,
+        "textLong": "Give them a long hug",
+        "textLongAfter": "Give them a long hug",
+        "textNotif": "gave you a long hug",
+        "textShort": "Jab"
     }
+    ]);
+
+    touchTypeQueries.push(touchType.save(null, {
+        success: function(obj) {
+            touchTypes.push(obj);
+        },
+        error: function(touchType, error) {
+            exports.onTestFailure(error);
+        }
     }));
-    
+
     Parse.Promise.when(touchTypeQueries).then(function() {
         var onSuccess = function(user, num) {
             users.push(user);

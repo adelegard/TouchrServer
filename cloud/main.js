@@ -19,11 +19,11 @@ var getObjectAttributesWithObjectId = function(object) {
 Parse.Cloud.define(constants.MethodNames.getFriends, function(request, response) {
     var friends;
     var page = parseInt(request.params.page, 10);
-    
+
     if (!_.isNumber(page) || _.isNaN(page)) {
         page = 1;
     }
-    
+
     var queries = [
         queryHelper.getQueryAllUserFriendsForUser(request.user, page).find({
             success: function(results) {
@@ -34,7 +34,7 @@ Parse.Cloud.define(constants.MethodNames.getFriends, function(request, response)
             }
         })
     ];
-    
+
     Parse.Promise.when(queries).then(function() {
         response.success(queryHelper.getAllUserFriends(request.user, friends));
     });
@@ -527,11 +527,45 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
     var textColor = request.object.get(constants.ColumnTouchTypeTextColor);
     var steps = request.object.get(constants.ColumnTouchTypeSteps);
     var isDefault = request.object.get(constants.ColumnTouchTypeIsDefault);
-    
+
+    var hasDurationMsSteps = !_.isUndefined(_.find(steps, function(step) {
+        return _.isNumber(step.durationMs);
+    }));
+    var hasMinMsSteps = !_.isUndefined(_.find(steps, function(step) {
+        return _.isNumber(step.minMs);
+    }));
+
+    if (hasDurationMsSteps && hasMinMsSteps) {
+        response.error("steps cannot use both durationMs and minMs");
+        return;
+    }
+
+    if (hasDurationMsSteps) {
+        var numStepsWithDurations = _.filter(steps, function(step) {
+            return _.isNumber(step.durationMs);
+        }).length;
+        if (numStepsWithDurations !== steps.length) {
+            response.error("number of durationMs steps doesnt match steps length!");
+            return;
+        }
+        // convert durationMs's into minMs and maxMs
+        var totalDurationMs = 0;
+        _.each(steps, function(step, index) {
+            step.minMs = totalDurationMs;
+            if ((steps.length-1) !== index) {
+                // not the last step
+                step.maxMs = step.minMs + step.durationMs;
+            }
+            delete step.durationMs;
+            totalDurationMs += step.durationMs;
+        });
+        request.object.set(constants.ColumnTouchTypeSteps, steps);
+    }
+
     var onlyOneStepWithMissingMaxMs = _.filter(steps, function(step) {
         return _.isUndefined(step.maxMs);
     }).length === 1;
-    
+
     var errorMsg;
     var invalidStep = _.find(steps, function(step) {
         if (!_.isNumber(step.minMs) || (!_.isUndefined(step.maxMs) && !_.isNumber(step.maxMs))) {
@@ -564,7 +598,7 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
         }
         return false;
     });
-    
+
     var fullHexColorLength = 7;
     var poundSymbol = "#";
     if (!_.isString(name) || name.length === 0) {

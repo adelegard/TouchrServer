@@ -12,7 +12,7 @@ Parse.initialize("PAMarLS2eyfYafzxzmcb7ztR4YeL3OvzOtrNeSnQ", "qRBeFXFMikrIGzESXD
 describe('Authentication', function() {
     var users;
     var touchTypes;
-    
+
     before(function (done) {
         this.timeout(timeoutMs);
         testUtils.setupData().then(function(obj) {
@@ -27,7 +27,7 @@ describe('Authentication', function() {
         testUtils.destroyTouchTypes();
         testUtils.destroyTestUsers(done);
     });
-    
+
     describe('authenticated requests', function() {
         this.timeout(timeoutMs);
 
@@ -46,7 +46,7 @@ describe('Authentication', function() {
                 }
             });
         });
-        
+
         it('have no touches to user', function(done) {
             Parse.Cloud.run(constants.MethodNames.getTouchesToUser, {}, {
                 success: function(userTouches) {
@@ -262,12 +262,12 @@ describe('Authentication', function() {
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
                 userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.first(touchTypes).id);
                 userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(0);
-                
+
                 userTouchType = _.last(userTouchTypes);
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
                 userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.last(touchTypes).id);
                 userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(1);
-                
+
                 done();
             },
             error: function(error) {
@@ -287,7 +287,7 @@ describe('Authentication', function() {
             });
         });
 
-        it('shouldnt have any user touch types', function(done) {
+        it('should only have one touch type', function(done) {
             Parse.Cloud.run(constants.MethodNames.getUserTouchTypes, {}, {
             success: function(userTouchTypes) {
                 userTouchTypes.length.should.equal(1);
