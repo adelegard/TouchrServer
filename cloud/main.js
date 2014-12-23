@@ -646,7 +646,7 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
 Parse.Cloud.afterDelete(constants.TableTouchType, function(request) {
     // delete user touch types
     query = new Parse.Query(constants.TableUserTouchType);
-    query.equalTo(constants.ColumnUserTouchTypeTouchType, request.object.id);
+    query.equalTo(constants.ColumnUserTouchTypeTouchTypeObjectId, request.object.id);
     query.find({
         success: function(userTouchTypes) {
             Parse.Object.destroyAll(userTouchTypes, {
