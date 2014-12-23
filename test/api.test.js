@@ -432,7 +432,7 @@ describe('Authentication', function() {
             });
         });
 
-        it('shouldnt be able to delete the private touch type', function(done) {
+        xit('shouldnt be able to delete the private touch type', function(done) {
             Parse.Promise.when(touchTypePrivate.destroy()).then(function() {
                 testUtils.onTestFailure("shouldnt have been able to delete this!");
             }, function() {

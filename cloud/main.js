@@ -633,15 +633,15 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
     }
 });
 
-Parse.Cloud.beforeDelete(constants.TableTouchType, function(request) {
-    // make sure the user doing the deletion is the one that created it
-    // TODO: accomplish this with ACLs
-    if (request.object.get(constants.ColumnTouchTypeCreatedByUserId) !== Parse.User.current().id) {
-        response.error("Can't delete touch type b/c the user didn't create it!");
-        return;
-    }
-    response.success();
-});
+// Parse.Cloud.beforeDelete(constants.TableTouchType, function(request) {
+//     // make sure the user doing the deletion is the one that created it
+//     // TODO: accomplish this with ACLs
+//     if (request.object.get(constants.ColumnTouchTypeCreatedByUserId) !== Parse.User.current().id) {
+//         response.error("Can't delete touch type b/c the user didn't create it!");
+//         return;
+//     }
+//     response.success();
+// });
 
 Parse.Cloud.afterDelete(constants.TableTouchType, function(request) {
     // delete user touch types
