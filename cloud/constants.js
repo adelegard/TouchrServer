@@ -105,6 +105,8 @@ exports.ColumnTouchTypeName = "name";
 exports.ColumnTouchTypeBgColor = "bgColor";
 exports.ColumnTouchTypeTextColor = "textColor";
 exports.ColumnTouchTypeSteps = "steps";
+exports.ColumnTouchTypeCreatedByUser = "createdByUser";
+exports.ColumnTouchTypeCreatedByUserId = "createdByUserId";
 exports.ColumnTouchTypeIsDefault = "isDefault";
 exports.ColumnTouchTypeIsPrivate = "isPrivate";
 

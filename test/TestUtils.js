@@ -29,12 +29,12 @@ exports.setupData = function() {
     var TouchType = Parse.Object.extend(constants.TableTouchType);
     touchType = new TouchType();
 
-    touchType.set("name", "touch");
-    touchType.set("bgColor", "#ffffff");
-    touchType.set("textColor", "#777777");
-    touchType.set("isDefault", false);
-    touchType.set("isPrivate", false);
-    touchType.set("steps", [
+    touchType.set(constants.ColumnTouchTypeName, "touch");
+    touchType.set(constants.ColumnTouchTypeBgColor, "#ffffff");
+    touchType.set(constants.ColumnTouchTypeTextColor, "#777777");
+    touchType.set(constants.ColumnTouchTypeIsDefault, false);
+    touchType.set(constants.ColumnTouchTypeIsPrivate, false);
+    touchType.set(constants.ColumnTouchTypeSteps, [
     {
         "maxMs": 2000,
         "minMs": 0,
@@ -71,12 +71,12 @@ exports.setupData = function() {
 
     touchType = new TouchType();
 
-    touchType.set("name", "poke");
-    touchType.set("bgColor", "#ffffff");
-    touchType.set("textColor", "#777777");
-    touchType.set("isDefault", false);
-    touchType.set("isPrivate", false);
-    touchType.set("steps", [
+    touchType.set(constants.ColumnTouchTypeName, "poke");
+    touchType.set(constants.ColumnTouchTypeBgColor, "#ffffff");
+    touchType.set(constants.ColumnTouchTypeTextColor, "#777777");
+    touchType.set(constants.ColumnTouchTypeIsDefault, false);
+    touchType.set(constants.ColumnTouchTypeIsPrivate, false);
+    touchType.set(constants.ColumnTouchTypeSteps, [
     {
         "durationMs": 2000,
         "textLong": "Give them a little hug",

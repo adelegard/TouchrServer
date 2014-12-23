@@ -28,8 +28,17 @@ var getQueryWithPaging = function(query, page) {
     return query;
 };
 
-exports.getTouchTypesQuery = function() {
-    return new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+exports.getTouchTypesQuery = function(user, page) {
+    var queryNonPrivate = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+    queryNonPrivate.equalTo(constants.ColumnTouchTypeIsPrivate, false);
+
+    console.log("----------- user.id: " + user.id);
+
+    var queryPrivate = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+    queryPrivate.equalTo(constants.ColumnTouchTypeIsPrivate, true);
+    queryPrivate.equalTo(constants.ColumnTouchTypeCreatedByUserId, user.id);
+
+    return getQueryWithPaging(Parse.Query.or(queryNonPrivate, queryPrivate), page);
 };
 
 exports.getNewUserTouchTypeQueryWithUserAndTouchTypeAndOrder = function(user, touchType, order) {
@@ -72,14 +81,14 @@ exports.getDefaultTouchTypeQuery = function() {
     return query;
 };
 
-exports.getTouchTypeQueryForTouchTypeId = function(touchTypeId) {
-    var query = exports.getTouchTypesQuery();
+exports.getTouchTypeQueryForTouchTypeId = function(user, touchTypeId) {
+    var query = exports.getTouchTypesQuery(user);
     query.equalTo(constants.ColumnObjectId, touchTypeId);
     return query;
 };
 
-exports.getTouchTypeQueryForTouchTypeIds = function(touchTypeIds) {
-    var query = exports.getTouchTypesQuery();
+exports.getTouchTypeQueryForTouchTypeIds = function(user, touchTypeIds) {
+    var query = exports.getTouchTypesQuery(user);
     query.containedIn(constants.ColumnObjectId, touchTypeIds);
     return query;
 };

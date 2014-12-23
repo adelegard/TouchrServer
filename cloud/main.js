@@ -173,7 +173,7 @@ Parse.Cloud.define(constants.MethodNames.getTouchesToUser, function(request, res
                 response.error("failed to get touches to user!");
             }
         }),
-        queryHelper.getTouchTypesQuery().find({
+        queryHelper.getTouchTypesQuery(request.user).find({
             success: function(objects) {
                 touchTypes = _.map(objects, function(object) {
                     return getObjectAttributesWithObjectId(object);
@@ -184,14 +184,19 @@ Parse.Cloud.define(constants.MethodNames.getTouchesToUser, function(request, res
             }
         })
     ];
-    
+
     Parse.Promise.when(queries).then(function() {
         response.success(queryHelper.getTouchesToUserWithFriends(request.user, touchesToYou, friends, touchTypes));
     });
 });
 
 Parse.Cloud.define(constants.MethodNames.getTouchTypes, function(request, response) {
-    queryHelper.getTouchTypesQuery().find({
+    var page = parseInt(request.params.page, 10);
+    if (!_.isNumber(page) || _.isNaN(page)) {
+        page = 1;
+    }
+
+    queryHelper.getTouchTypesQuery(request.user, page).find({
         success: function(objects) {
             response.success(_.map(objects, function(object) {
                 return getObjectAttributesWithObjectId(object);
@@ -250,7 +255,7 @@ Parse.Cloud.define(constants.MethodNames.addUserTouchType, function(request, res
         touchTypeError = false,
         largestUserTypeError = false;
     Parse.Promise.when([
-        queryHelper.getTouchTypeQueryForTouchTypeId(touchTypeObjectId).first({
+        queryHelper.getTouchTypeQueryForTouchTypeId(request.user, touchTypeObjectId).first({
             success: function(object) {
                 touchType = object;
             },
@@ -341,7 +346,7 @@ Parse.Cloud.define(constants.MethodNames.setUserTouchTypes, function(request, re
 
     var touchTypes,
         userTouchTypes = [];
-    queryHelper.getTouchTypeQueryForTouchTypeIds(touchTypeObjectIds).find().then(function(objects) {
+    queryHelper.getTouchTypeQueryForTouchTypeIds(request.user, touchTypeObjectIds).find().then(function(objects) {
         // sort them by the order they were passed in with
         touchTypes = objects;
         return new Parse.Promise().resolve();
@@ -405,13 +410,13 @@ Parse.Cloud.define(constants.MethodNames.getTouchesFromUser, function(request, r
     var friends;
     var touchesFromYou;
     var touchTypes;
-    
+
     var page = parseInt(request.params.page, 10);
-    
+
     if (!_.isNumber(page) || _.isNaN(page)) {
         page = 1;
     }
-    
+
     var queries = [
         queryHelper.getQueryAllUserFriendsForUser(request.user).find({
             success: function(results) {
@@ -429,7 +434,7 @@ Parse.Cloud.define(constants.MethodNames.getTouchesFromUser, function(request, r
                 response.error("failed to get touches to user!");
             }
         }),
-        queryHelper.getTouchTypesQuery().find({
+        queryHelper.getTouchTypesQuery(request.user).find({
             success: function(objects) {
                 touchTypes = _.map(objects, function(object) {
                     return getObjectAttributesWithObjectId(object);
@@ -529,6 +534,11 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
     var isDefault = request.object.get(constants.ColumnTouchTypeIsDefault);
     var isPrivate = request.object.get(constants.ColumnTouchTypeIsPrivate);
 
+    if (Parse.User.current()) {
+        request.object.set(constants.ColumnTouchTypeCreatedByUser, Parse.User.current());
+        request.object.set(constants.ColumnTouchTypeCreatedByUserId, Parse.User.current().id);
+    }
+
     var hasDurationMsSteps = !_.isUndefined(_.find(steps, function(step) {
         return _.isNumber(step.durationMs);
     }));
@@ -623,6 +633,52 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
     }
 });
 
+Parse.Cloud.beforeDelete(constants.TableTouchType, function(request) {
+    // make sure the user doing the deletion is the one that created it
+    // TODO: accomplish this with ACLs
+    if (request.object.get(constants.ColumnTouchTypeCreatedByUserId) !== Parse.User.current().id) {
+        response.error("Can't delete touch type b/c the user didn't create it!");
+        return;
+    }
+    response.success();
+});
+
+Parse.Cloud.afterDelete(constants.TableTouchType, function(request) {
+    // delete user touch types
+    query = new Parse.Query(constants.TableUserTouchType);
+    query.equalTo(constants.ColumnUserTouchTypeTouchType, request.object.id);
+    query.find({
+        success: function(userTouchTypes) {
+            Parse.Object.destroyAll(userTouchTypes, {
+                success: function() {},
+                error: function(error) {
+                    console.error("Error deleting related user touch types " + error.code + ": " + error.message);
+                }
+            });
+        },
+        error: function(error) {
+            console.error("Error finding related user touch types " + error.code + ": " + error.message);
+        }
+    });
+
+    // delete touches
+    query = new Parse.Query(constants.TableTouch);
+    query.equalTo(constants.ColumnTouchTypeObjectId, request.object.id);
+    query.find({
+        success: function(touches) {
+            Parse.Object.destroyAll(touches, {
+                success: function() {},
+                error: function(error) {
+                    console.error("Error deleting related touches " + error.code + ": " + error.message);
+                }
+            });
+        },
+        error: function(error) {
+            console.error("Error finding related touches " + error.code + ": " + error.message);
+        }
+    });
+});
+
 // AfterSave method that runs after every touch
 // and sends a push notification to the UserTo user
 Parse.Cloud.afterSave(constants.TableTouch, function(request) {
@@ -651,7 +707,7 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
     var userFrom;
     var touchType;
     var touchTypeId = request.object.get(constants.ColumnTouchTypeObjectId);
-    queryHelper.getTouchTypeQueryForTouchTypeId(touchTypeId).first({
+    queryHelper.getTouchTypeQueryForTouchTypeId(request.user, touchTypeId).first({
         success: function(object) {
             touchType = object;
         },

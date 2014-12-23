@@ -62,14 +62,13 @@ describe('Authentication', function() {
                 }
             });
         });
-        
-        
+
         it('have no touches from user', function(done) {
             Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
             success: function(userTouches) {
                 // friends object should have 6 elements
                 _.keys(userTouches).length.should.equal(2);
-                
+
                 userTouches.results.should.have.length(0);
                 userTouches.hasFriends.should.equal(false);
                 done();
@@ -211,7 +210,7 @@ describe('Authentication', function() {
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
                 userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.first(touchTypes).id);
                 userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(1);
-                
+
                 userTouchType = _.last(userTouchTypes);
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
                 userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.last(touchTypes).id);
@@ -248,6 +247,79 @@ describe('Authentication', function() {
             });
         });
 
+        it('should be two touch types', function(done) {
+            Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
+            success: function(objs) {
+                objs.length.should.equal(touchTypes.length);
+                done();
+            },
+            error: function(error) {
+                testUtils.onTestFailure(error);
+            }
+            });
+        });
+
+        var touchTypePrivate;
+        it('can create our own (private) touch type', function(done) {
+            var TouchType = Parse.Object.extend(constants.TableTouchType);
+            touchType = new TouchType();
+
+            var touchTypeName = "my touch type";
+            touchType.set(constants.ColumnTouchTypeName, touchTypeName);
+            touchType.set(constants.ColumnTouchTypeBgColor, "#ffffff");
+            touchType.set(constants.ColumnTouchTypeTextColor, "#777777");
+            touchType.set(constants.ColumnTouchTypeIsDefault, false);
+            touchType.set(constants.ColumnTouchTypeIsPrivate, true);
+            // touchType.set(constants.ColumnTouchTypeCreatedByUser, Parse.User.current());
+            touchType.set(constants.ColumnTouchTypeSteps, [
+            {
+                "durationMs": 2000,
+                "textLong": "Give them a little hug",
+                "textLongAfter": "Give them a little hug",
+                "textNotif": "gave you a little hug",
+                "textShort": "Touch"
+            },
+            {
+                "durationMs": 2000,
+                "textLong": "Give them a medium hug",
+                "textLongAfter": "Give them a medium hug",
+                "textNotif": "gave you a medium hug",
+                "textShort": "Poke"
+            },
+            {
+                "durationMs": 2000,
+                "textLong": "Give them a long hug",
+                "textLongAfter": "Give them a long hug",
+                "textNotif": "gave you a long hug",
+                "textShort": "Jab"
+            }
+            ]);
+
+            touchType.save(null, {
+                success: function(obj) {
+                    touchTypePrivate = obj;
+                    touchTypes.push(obj);
+                    obj.get(constants.ColumnTouchTypeName).should.equal(touchTypeName);
+                    done();
+                },
+                error: function(touchType, error) {
+                    exports.onTestFailure(error);
+                }
+            });
+        });
+
+        it('should be one more touch types', function(done) {
+            Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
+            success: function(objs) {
+                objs.length.should.equal(touchTypes.length);
+                done();
+            },
+            error: function(error) {
+                testUtils.onTestFailure(error);
+            }
+            });
+        });
+
         it('can set our user touch types', function(done) {
             Parse.Cloud.run(constants.MethodNames.setUserTouchTypes, {touchTypeObjectIds: _.map(touchTypes, function(touchType) {
                 // console.log("touchType.id: " + touchType.id);
@@ -257,16 +329,21 @@ describe('Authentication', function() {
                 // userTouchTypes = _.each(userTouchTypes, function(userTouchType) {
                 //     console.log("userTouchType.id: " + userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId]);
                 // });
-                userTouchTypes.length.should.equal(2);
-                var userTouchType = _.first(userTouchTypes);
+                userTouchTypes.length.should.equal(3);
+                var userTouchType = userTouchTypes[0];
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
-                userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.first(touchTypes).id);
+                userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(touchTypes[0].id);
                 userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(0);
 
-                userTouchType = _.last(userTouchTypes);
+                userTouchType = userTouchTypes[1];
                 userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
-                userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(_.last(touchTypes).id);
+                userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(touchTypes[1].id);
                 userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(1);
+
+                userTouchType = userTouchTypes[2];
+                userTouchType[constants.ColumnUserTouchTypeUserObjectId].should.equal(Parse.User.current().id);
+                userTouchType[constants.ColumnUserTouchTypeTouchTypeObjectId].should.equal(touchTypes[2].id);
+                userTouchType[constants.ColumnUserTouchTypeOrder].should.equal(2);
 
                 done();
             },
@@ -287,10 +364,10 @@ describe('Authentication', function() {
             });
         });
 
-        it('should only have one touch type', function(done) {
+        it('should only have two touch types', function(done) {
             Parse.Cloud.run(constants.MethodNames.getUserTouchTypes, {}, {
             success: function(userTouchTypes) {
-                userTouchTypes.length.should.equal(1);
+                userTouchTypes.length.should.equal(2);
                 done();
             },
             error: function(error) {
@@ -340,7 +417,30 @@ describe('Authentication', function() {
                 }
             });
         });
-        
+
+        it('should not see the private touch the other user created', function(done) {
+            Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
+            success: function(objs) {
+                _.isUndefined(_.find(objs, function(touchType) {
+                    return touchType.id === touchTypePrivate.id;
+                })).should.equal(true);
+                done();
+            },
+            error: function(error) {
+                testUtils.onTestFailure(error);
+            }
+            });
+        });
+
+        it('shouldnt be able to delete the private touch type', function(done) {
+            Parse.Promise.when(touchTypePrivate.destroy()).then(function() {
+                testUtils.onTestFailure("shouldnt have been able to delete this!");
+            }, function() {
+                // error (good!)
+                done();
+            });
+        });
+
         it('can remove all touches to or from our friends userId', function(done) {
             // this last user is who we were first logged in as (and whom this current user has touches with)
             Parse.Cloud.run(constants.MethodNames.removeTouchesToOrFromUser, {userFriendObjectId: _.last(users).id}, {
@@ -366,6 +466,19 @@ describe('Authentication', function() {
             error: function(error) {
                 testUtils.onTestFailure(error);
             }
+            });
+        });
+
+        it('can login as our initial friend user so we can delete all touch types', function(done) {
+            Parse.User.logOut();
+            var user = _.last(friends);
+            Parse.User.logIn(user.get("username"), user.get("password"), {
+                success: function(user) {
+                    done();
+                },
+                error: function(user, error) {
+                    testUtils.onTestFailure(error);
+                }
             });
         });
     });
