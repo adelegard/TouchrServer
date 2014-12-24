@@ -145,9 +145,9 @@ exports.setupData = function() {
             var doSignup = function() {
                 user.signUp(null, {
                 success: function(signedUpUser) {
-                    console.log("created test user: " + signedUpUser.get("username") + " (" + signedUpUser.id + ")");
+                    // console.log("created test user: " + signedUpUser.get("username") + " (" + signedUpUser.id + ")");
                     signedUpUser.set("password", text);
-                    
+
                     Parse.Cloud.run(constants.MethodNames.addUserTouchType, {touchTypeObjectId: _.first(touchTypes).id}, {
                     success: function() {
                         onSuccess(signedUpUser, num);
@@ -186,8 +186,8 @@ exports.destroyTestUsers = function(done, error) {
         success: function() {
             Parse.Cloud.run(constants.MethodNames.deleteUser, {}, {
             success: function() {
-                console.log("destroyed test user: " + user.get("username") + " (" + user.id + ")");
-                
+                // console.log("destroyed test user: " + user.get("username") + " (" + user.id + ")");
+
                 // The object was deleted from the Parse Cloud.
                 Parse.User.logOut();
                 numDestroyed++;
@@ -253,8 +253,8 @@ exports.destroyTouchTypes = function() {
         throw error;
     }
     }).then(function() {
-        // Every comment was deleted.
-        console.log("all touch types destroyed");
+        // Every touch type was deleted.
+        // console.log("all touch types destroyed");
     });
 };
 

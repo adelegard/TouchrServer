@@ -31,56 +31,8 @@ describe('Authentication', function() {
     describe('authenticated requests', function() {
         this.timeout(timeoutMs);
 
-        it('have no friends', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getFriends, {}, {
-                success: function(friends) {
-                    // friends object should have 6 elements
-                    _.keys(friends).length.should.equal(2);
-
-                    friends.results.should.have.length(0);
-                    friends.hasFriends.should.equal(false);
-                    done();
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-            });
-        });
-
-        it('have no touches to user', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getTouchesToUser, {}, {
-                success: function(userTouches) {
-                    // friends object should have 6 elements
-                    _.keys(userTouches).length.should.equal(2);
-                
-                    userTouches.results.should.have.length(0);
-                    userTouches.hasFriends.should.equal(false);
-                    done();
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-            });
-        });
-
-        it('have no touches from user', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
-            success: function(userTouches) {
-                // friends object should have 6 elements
-                _.keys(userTouches).length.should.equal(2);
-
-                userTouches.results.should.have.length(0);
-                userTouches.hasFriends.should.equal(false);
-                done();
-            },
-            error: function(error) {
-                testUtils.onTestFailure(error);
-            }
-            });
-        });
-        
         var friends = [];
-        
+
         it('can add a single friend', function(done) {
             var friendUser = _.find(users, function(user) {
                 return user.id !== Parse.User.current().id;
@@ -112,54 +64,7 @@ describe('Authentication', function() {
                 }
             });
         });
-        
-        it('still have one friend', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getFriends, {}, {
-                success: function(friends) {
-                    friends.results.should.have.length(1);
-                    friends.hasFriends.should.equal(true);
-                    done();
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-            });
-        });
-        
-        var touchMsDefault = 5000;
-        var numTouches = 0;
-        it('can touch our friend', function(done) {
-           Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, durationMs: touchMsDefault, touchTypeObjectId: _.first(touchTypes).id}, {
-                success: function() {
-                    numTouches++;
-                    Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
-                        success: function(userTouches) {
-                            userTouches.results.should.have.length(1);
-                            userTouches.hasFriends.should.equal(true);
-                            done();
-                        },
-                        error: function(error) {
-                            testUtils.onTestFailure(error);
-                        }
-                    });
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-            });
-        });
-        
-        it('cannot touch our friend with a touchType we dont have', function(done) {
-            Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, durationMs: 1, touchTypeObjectId: _.last(touchTypes).id}, {
-                success: function() {
-                    testUtils.onTestFailure("shouldnt be able to touch with a touchType we don't have");
-                },
-                error: function(error) {
-                    done();
-                }
-            });
-        });
-        
+
         it('cannot add a touch type we already have', function(done) {
             Parse.Cloud.run(constants.MethodNames.addUserTouchType, {touchTypeObjectId: _.first(touchTypes).id}, {
             success: function() {
@@ -376,35 +281,16 @@ describe('Authentication', function() {
             });
         });
 
-        it('can get our friend details', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getFriendDetails, {userFriendObjectId: _.first(friends).id}, {
-                success: function(friendDetails) {
-                    //numTouchesTo
-                    //numTouchesFrom
-                    //touchesToMs
-                    //touchesFromMs
-                    _.keys(friendDetails).length.should.equal(4);
-                    friendDetails.numTouchesTo.should.equal(numTouches);
-                    friendDetails.numTouchesFrom.should.equal(0);
-                    friendDetails.touchesToMs.should.equal(numTouches * touchMsDefault);
-                    friendDetails.touchesFromMs.should.equal(0);
-                    done();
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-            });
-        });
-
-        it('can login as our friend user and see their touches', function(done) {
+        it('should not see the private touch type the other user created', function(done) {
             Parse.User.logOut();
             var user = _.first(friends);
             Parse.User.logIn(user.get("username"), user.get("password"), {
                 success: function(user) {
-                    Parse.Cloud.run(constants.MethodNames.getTouchesToUser, {}, {
-                        success: function(userTouches) {
-                            userTouches.results.should.have.length(1);
-                            userTouches.hasFriends.should.equal(true);
+                    Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
+                        success: function(objs) {
+                            _.isUndefined(_.find(objs, function(touchType) {
+                                return touchType.id === touchTypePrivate.id;
+                            })).should.equal(true);
                             done();
                         },
                         error: function(error) {
@@ -418,54 +304,12 @@ describe('Authentication', function() {
             });
         });
 
-        it('should not see the private touch the other user created', function(done) {
-            Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
-            success: function(objs) {
-                _.isUndefined(_.find(objs, function(touchType) {
-                    return touchType.id === touchTypePrivate.id;
-                })).should.equal(true);
-                done();
-            },
-            error: function(error) {
-                testUtils.onTestFailure(error);
-            }
-            });
-        });
-
         xit('shouldnt be able to delete the private touch type', function(done) {
             Parse.Promise.when(touchTypePrivate.destroy()).then(function() {
                 testUtils.onTestFailure("shouldnt have been able to delete this!");
             }, function() {
                 // error (good!)
                 done();
-            });
-        });
-
-        it('can remove all touches to or from our friends userId', function(done) {
-            // this last user is who we were first logged in as (and whom this current user has touches with)
-            Parse.Cloud.run(constants.MethodNames.removeTouchesToOrFromUser, {userFriendObjectId: _.last(users).id}, {
-            success: function(user) {
-                Parse.Cloud.run(constants.MethodNames.getTouchesToUser, {}, {
-                success: function(userTouchesTo) {
-                    userTouchesTo.results.should.have.length(0);
-                    Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
-                        success: function(userTouchesFrom) {
-                            userTouchesFrom.results.should.have.length(0);
-                            done();
-                        },
-                        error: function(error) {
-                            testUtils.onTestFailure(error);
-                        }
-                    });
-                },
-                error: function(error) {
-                    testUtils.onTestFailure(error);
-                }
-                });
-            },
-            error: function(error) {
-                testUtils.onTestFailure(error);
-            }
             });
         });
 
