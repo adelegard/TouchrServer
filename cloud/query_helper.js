@@ -169,18 +169,21 @@ exports.getQueryAllUserFriendsForUser = function(user, page) {
     var queryFriendRequestUser = new Parse.Query(Parse.Object.extend(constants.TableFriendRequest));
     queryFriendRequestUser.equalTo(constants.ColumnFriendRequestUserFriend, user);
     queryFriendRequestUser.equalTo(constants.ColumnFriendRequestStatus, constants.ColumnDataFriendRequestStatusAccepted);
-    
+
     var queryFriendRequestRequested = new Parse.Query(Parse.Object.extend(constants.TableFriendRequest));
     queryFriendRequestRequested.equalTo(constants.ColumnFriendRequestUserRequested, user);
     queryFriendRequestRequested.equalTo(constants.ColumnFriendRequestStatus, constants.ColumnDataFriendRequestStatusAccepted);
-    
+
     var usersRequestedQuery = new Parse.Query(Parse.User);
     usersRequestedQuery.matchesKeyInQuery(constants.ColumnObjectId, constants.ColumnFriendRequestUserRequestedObjectId, queryFriendRequestUser);
-    
+
     var usersFriendsQuery = new Parse.Query(Parse.User);
     usersFriendsQuery.matchesKeyInQuery(constants.ColumnObjectId, constants.ColumnFriendRequestUserFriendObjectId, queryFriendRequestRequested);
-    
-    return getQueryWithPaging(Parse.Query.or(usersRequestedQuery, usersFriendsQuery), page);
+
+    var usersQuery = Parse.Query.or(usersRequestedQuery, usersFriendsQuery);
+    usersQuery.ascending(constants.ColumnUserUsername);
+
+    return getQueryWithPaging(usersQuery, page);
 };
 
 exports.getQueryTouchesToOrFrom = function(user, userFriendObjectId) {

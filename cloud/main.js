@@ -692,17 +692,16 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
     }
     var userToObjectId = request.object.get(constants.ColumnTouchUserToObjectId);
     var userFromObjectId = request.object.get(constants.ColumnTouchUserFromObjectId);
-    
+
     // round the duration to one decimal place
     var durationMs = parseInt(request.object.get(constants.ColumnTouchDuration), 10);
-    var durationSeconds = Math.round((((durationMs/1000) * 10 ) / 10));
-    
+
     var userQueryTo = new Parse.Query(Parse.User);
     userQueryTo.equalTo(constants.ColumnObjectId, userToObjectId);
-    
+
     var userQueryFrom = new Parse.Query(Parse.User);
     userQueryFrom.equalTo(constants.ColumnObjectId, userFromObjectId);
-    
+
     var userTo;
     var userFrom;
     var touchType;
@@ -742,24 +741,21 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
                 }
                 // Successfully retrieved the user
                 var userFromUsername = userFrom.get(constants.ColumnUserUsername);
-                
-                var touchTypeStep = queryHelper.getMatchingTouchTypeStepForTouchDuration(touchType.get(constants.ColumnTouchTypeSteps), durationMs);
 
                 var pushQuery = new Parse.Query(Parse.Installation);
                 pushQuery.matchesKeyInQuery(constants.ColumnInstallationUser, constants.ColumnObjectId, userQueryTo);
-            
+
                 Parse.Push.send({
                     where: pushQuery, // Set our Installation query
                     data: {
-                        alert: _getPushNotificationMessage(userFromUsername, touchTypeStep.textNotif)
+                        alert: _getPushNotificationMessage(userFromUsername, touchType, durationMs)
                     }
                     }, {
                         success: function() {
                             // Push was successful
-                            console.log("sent push - userFrom: " + userFromUsername);
                         },
                         error: function(error) {
-                            console.log("Got an error " + error.code + " : " + error.message);
+                            console.log("Got an error sending push notif: " + error.code + " : " + error.message);
                     }
                 });
             },
@@ -770,8 +766,9 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
     });
 });
 
-var _getPushNotificationMessage = function(userToUsername, textNotif) {
-    return userToUsername + " " + textNotif;
+var _getPushNotificationMessage = function(userToUsername, touchType, durationMs) {
+    var touchTypeStep = queryHelper.getMatchingTouchTypeStepForTouchDuration(touchType.get(constants.ColumnTouchTypeSteps), durationMs);
+    return "from " + userToUsername + ": [" + touchType.get(constants.ColumnTouchTypeName) + "] " + touchTypeStep.textNotif;
 };
 
 // get the FIRST unused Purchase Touch - and make it used
