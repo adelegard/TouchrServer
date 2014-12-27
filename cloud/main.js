@@ -208,6 +208,60 @@ Parse.Cloud.define(constants.MethodNames.getTouchTypes, function(request, respon
     });
 });
 
+Parse.Cloud.define(constants.MethodNames.getCreatedTouchTypes, function(request, response) {
+    var page = parseInt(request.params.page, 10);
+    if (!_.isNumber(page) || _.isNaN(page)) {
+        page = 1;
+    }
+
+    queryHelper.getCreatedTouchTypesQuery(request.user, page).find({
+        success: function(objects) {
+            response.success(_.map(objects, function(object) {
+                return getObjectAttributesWithObjectId(object);
+            }));
+        },
+        error: function() {
+            response.error("failed to get touch types");
+        }
+    });
+});
+
+Parse.Cloud.define(constants.MethodNames.getNewestTouchTypes, function(request, response) {
+    var page = parseInt(request.params.page, 10);
+    if (!_.isNumber(page) || _.isNaN(page)) {
+        page = 1;
+    }
+
+    queryHelper.getNewestTouchTypesQuery(request.user, page).find({
+        success: function(objects) {
+            response.success(_.map(objects, function(object) {
+                return getObjectAttributesWithObjectId(object);
+            }));
+        },
+        error: function() {
+            response.error("failed to get touch types");
+        }
+    });
+});
+
+Parse.Cloud.define(constants.MethodNames.getPopularTouchTypes, function(request, response) {
+    var page = parseInt(request.params.page, 10);
+    if (!_.isNumber(page) || _.isNaN(page)) {
+        page = 1;
+    }
+
+    queryHelper.getPopularTouchTypesQuery(request.user, page).find({
+        success: function(objects) {
+            response.success(_.map(objects, function(object) {
+                return getObjectAttributesWithObjectId(object);
+            }));
+        },
+        error: function() {
+            response.error("failed to get touch types");
+        }
+    });
+});
+
 Parse.Cloud.define(constants.MethodNames.getUserTouchTypes, function(request, response) {
     queryHelper.getUserTouchTypesQuery().find({
         success: function(objects) {

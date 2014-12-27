@@ -225,6 +225,37 @@ describe('Authentication', function() {
             });
         });
 
+        it('should be able to retrieve our created touch types', function(done) {
+            Parse.Cloud.run(constants.MethodNames.getCreatedTouchTypes, {}, {
+            success: function(objs) {
+                objs.length.should.equal(1);
+
+                var touchType = _.first(objs);
+                touchType[constants.ColumnTouchTypeName].should.equal(touchTypePrivate.get(constants.ColumnTouchTypeName));
+                done();
+            },
+            error: function(error) {
+                testUtils.onTestFailure(error);
+            }
+            });
+        });
+
+        it('should be able to retrieve the newest touch types', function(done) {
+            Parse.Cloud.run(constants.MethodNames.getNewestTouchTypes, {}, {
+            success: function(objs) {
+                objs.length.should.equal(touchTypes.length);
+
+                var touchType = _.first(objs);
+                // first touch type should be our newly created one
+                touchType[constants.ColumnTouchTypeName].should.equal(touchTypePrivate.get(constants.ColumnTouchTypeName));
+                done();
+            },
+            error: function(error) {
+                testUtils.onTestFailure(error);
+            }
+            });
+        });
+
         it('can set our user touch types', function(done) {
             Parse.Cloud.run(constants.MethodNames.setUserTouchTypes, {touchTypeObjectIds: _.map(touchTypes, function(touchType) {
                 // console.log("touchType.id: " + touchType.id);

@@ -32,13 +32,29 @@ exports.getTouchTypesQuery = function(user, page) {
     var queryNonPrivate = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
     queryNonPrivate.equalTo(constants.ColumnTouchTypeIsPrivate, false);
 
-    console.log("----------- user.id: " + user.id);
-
     var queryPrivate = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
     queryPrivate.equalTo(constants.ColumnTouchTypeIsPrivate, true);
     queryPrivate.equalTo(constants.ColumnTouchTypeCreatedByUserId, user.id);
 
     return getQueryWithPaging(Parse.Query.or(queryNonPrivate, queryPrivate), page);
+};
+
+exports.getCreatedTouchTypesQuery = function(user, page) {
+    var query = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+    query.equalTo(constants.ColumnTouchTypeCreatedByUserId, user.id);
+    return getQueryWithPaging(query, page);
+};
+
+exports.getNewestTouchTypesQuery = function(user, page) {
+    var query = exports.getTouchTypesQuery(user, page);
+    query.descending(constants.ColumnCreatedAt);
+    return getQueryWithPaging(query, page);
+};
+
+exports.getPopularTouchTypesQuery = function(user, page) {
+    var query = exports.getTouchTypesQuery(user, page);
+    // order by most used or something??
+    return getQueryWithPaging(query, page);
 };
 
 exports.getNewUserTouchTypeQueryWithUserAndTouchTypeAndOrder = function(user, touchType, order) {
