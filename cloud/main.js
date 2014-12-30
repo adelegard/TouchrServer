@@ -13,6 +13,55 @@ var getObjectAttributesWithObjectId = function(object) {
     }, object.attributes);
 };
 
+// BACKGROUND JOBS
+
+
+Parse.Cloud.job(constants.JobNames.removeUnusedTouchTypes, function(request, status) {
+    // Set up to modify user data
+    Parse.Cloud.useMasterKey();
+
+    var deletionPromises = [];
+
+    var counter = 0;
+
+    // change this query to only get touch types that were created > 3 days ago (or something)
+    var queryAllTouchTypes = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+    queryAllTouchTypes.find().then(function(touchTypes) {
+        // Collect one promise for each delete into an array.
+        var userTouchTypePromises = [];
+        _.each(touchTypes, function(touchType) {
+            var userTouchTypeQuery = new Parse.Query(Parse.Object.extend(constants.TableUserTouchType));
+            userTouchTypeQuery.equalTo(constants.ColumnUserTouchTypeTouchTypeObjectId, touchType.id);
+            userTouchTypePromises.push(userTouchTypeQuery.count({
+                success: function(count) {
+                    if (count === 0) {
+                        // no users are using this touch type - delete it!!
+                        deletionPromises.push(touchType.destroy());
+                        if (counter % 100 === 0) {
+                            // Set the  job's progress status
+                            status.message(counter + " touch types deleted.");
+                        }
+                        counter += 1;
+                    }
+                },
+                error: function(error) {
+                    // The request failed
+                    status.error("Uh oh, something went wrong getting user touch types.");
+                }
+            }));
+        });
+        return Parse.Promise.when(userTouchTypePromises);
+    }).then(function() {
+        // Return a new promise that is resolved when all of the deletes are finished.
+        return Parse.Promise.when(deletionPromises);
+    }).then(function() {
+        status.success("Deleted " + counter + " unused touch types");
+    }, function(error) {
+        // Set the job's error status
+        status.error("Uh oh, something went wrong.");
+    });
+});
+
 /* Returns your friends as a list of UserTouch objects {PFUser, touchDuration}
  * UI - Friends
  */

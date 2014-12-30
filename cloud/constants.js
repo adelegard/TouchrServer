@@ -28,6 +28,10 @@ exports.MethodNames = {
     setFriendRequestStatusDeniedForUserId: "setFriendRequestStatusDeniedForUserId"
 };
 
+exports.JobNames = {
+    removeUnusedTouchTypes: "removeUnusedTouchTypes"
+}
+
 // Strings (time)
 
 exports.TimeTypeMinutes = 'minutes';
