@@ -232,6 +232,8 @@ describe('Authentication', function() {
 
                 var touchType = _.first(objs);
                 touchType[constants.ColumnTouchTypeName].should.equal(touchTypePrivate.get(constants.ColumnTouchTypeName));
+                touchType[constants.ColumnTouchTypeCreatedByUser].id.should.equal(Parse.User.current().id);
+                touchType[constants.ColumnTouchTypeCreatedByUser].username.should.equal(Parse.User.current().username);
                 done();
             },
             error: function(error) {
