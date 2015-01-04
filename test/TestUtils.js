@@ -13,7 +13,6 @@ numUsers = 2;
 exports.onTestFailure = function(error) {
     console.log("error: " + error);
     exports.destroyTestUsers(null, error);
-    exports.destroyTouchTypes();
 };
 
 exports.setupData = function() {
@@ -163,7 +162,7 @@ exports.setupData = function() {
                 }
                 });
             };
-            
+
             if (num === 0) {
                 doSignup();
             } else {
@@ -178,83 +177,70 @@ exports.setupData = function() {
 };
 
 exports.destroyTestUsers = function(done, error) {
-    // delete our test users
-    var numDestroyed = 0;
-    
-    var onLoginSuccess = function(user) {
-        Parse.Cloud.run(constants.MethodNames.removeUserTouchTypes, {}, {
-        success: function() {
-            Parse.Cloud.run(constants.MethodNames.deleteUser, {}, {
-            success: function() {
-                // console.log("destroyed test user: " + user.get("username") + " (" + user.id + ")");
-
-                // The object was deleted from the Parse Cloud.
-                Parse.User.logOut();
-                numDestroyed++;
-                if (numDestroyed === numUsers) {
-                    // all users destroyed
-                    if (error) {
-                        throw error;
-                    } else {
-                        done();
-                    }
-                } else {
-                    doLogin();
-                }
+    var userNum = 0;
+    var onLoginSuccess = function(user, userNum) {
+        Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
+            success: function(touchTypes) {
+                var promises = [];
+                var query = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
+                query.containedIn(constants.ColumnObjectId, _.map(touchTypes, function(touchType) {
+                    return touchType.objectId;
+                }));
+                query.find().then(function(objs) {
+                    _.each(objs, function(obj) {
+                        promises.push(obj.destroy());
+                    });
+                });
+                return Parse.Promise.when(promises);
             },
             error: function(error) {
                 // The delete failed.
                 // error is a Parse.Error with an error code and message.
                 throw error;
             }
+        }).then(function() {
+            // Every touch type was deleted.
+            // now lets delete the user
+            Parse.Cloud.run(constants.MethodNames.deleteUser, {}, {
+                success: function() {
+                    // console.log("destroyed test user: " + user.get("username") + " (" + user.id + ")");
+
+                    // The object was deleted from the Parse Cloud.
+                    Parse.User.logOut();
+                    userNum++;
+                    if (userNum === numUsers) {
+                        // all users destroyed
+                        if (error) {
+                            throw error;
+                        } else {
+                            done();
+                        }
+                    } else {
+                        loginWithEachUserAndRunCallback(userNum, onLoginSuccess);
+                    }
+                },
+                error: function(error) {
+                    // The delete failed.
+                    // error is a Parse.Error with an error code and message.
+                    throw error;
+                }
             });
-        },
-        error: function(error) {
-            throw error;
-        }
         });
     };
+    loginWithEachUserAndRunCallback(userNum, onLoginSuccess);
+};
 
-    // delete our test user
-    var doLogin = function() {
-        // now log in with one of these newly created users
-        Parse.User.logIn(getTestUsernameWithPrefixAndNum(usernamePrefix, numDestroyed), getTestUsernameWithPrefixAndNum(usernamePrefix, numDestroyed), {
+var loginWithEachUserAndRunCallback = function(userNum, callback) {
+    // now log in with one of these newly created users
+    Parse.User.logIn(getTestUsernameWithPrefixAndNum(usernamePrefix, userNum), getTestUsernameWithPrefixAndNum(usernamePrefix, userNum), {
         success: function(user) {
             // Do stuff after successful login.
-            onLoginSuccess(user);
+            callback(user, userNum);
         },
         error: function(user, error) {
             // The login failed. Check error to see why.
             throw error;
         }
-        });
-    };
-    doLogin();
-};
-
-exports.destroyTouchTypes = function() {
-    Parse.Cloud.run(constants.MethodNames.getTouchTypes, {}, {
-    success: function(touchTypes) {
-        var promises = [];
-        var query = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
-        query.containedIn(constants.ColumnObjectId, _.map(touchTypes, function(touchType) {
-            return touchType.objectId;
-        }));
-        query.find().then(function(objs) {
-            _.each(objs, function(obj) {
-                promises.push(obj.destroy());
-            });
-        });
-        return Parse.Promise.when(promises);
-    },
-    error: function(error) {
-        // The delete failed.
-        // error is a Parse.Error with an error code and message.
-        throw error;
-    }
-    }).then(function() {
-        // Every touch type was deleted.
-        // console.log("all touch types destroyed");
     });
 };
 

@@ -24,7 +24,6 @@ describe('touch data setup', function() {
 
     after(function (done) {
         this.timeout(timeoutMs);
-        testUtils.destroyTouchTypes();
         testUtils.destroyTestUsers(done);
     });
 
@@ -120,13 +119,13 @@ describe('touch data setup', function() {
             });
         });
 
-        it('cannot touch our friend with a touchType we dont have', function(done) {
+        it('can indeed touch our friend with a touchType we dont have', function(done) {
             Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, durationMs: 1, touchTypeObjectId: _.last(touchTypes).id}, {
                 success: function() {
-                    testUtils.onTestFailure("shouldnt be able to touch with a touchType we don't have");
+                    done();
                 },
                 error: function(error) {
-                    done();
+                    testUtils.onTestFailure("should be able to touch with a touchType we don't have favorited");
                 }
             });
         });
@@ -138,7 +137,7 @@ describe('touch data setup', function() {
                 success: function(user) {
                     Parse.Cloud.run(constants.MethodNames.getTouchesToUser, {}, {
                         success: function(userTouches) {
-                            userTouches.results.should.have.length(1);
+                            userTouches.results.should.have.length(2);
                             userTouches.hasFriends.should.equal(true);
                             done();
                         },

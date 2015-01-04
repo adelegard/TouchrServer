@@ -24,7 +24,6 @@ describe('friend tests data setup', function() {
 
     after(function (done) {
         this.timeout(timeoutMs);
-        testUtils.destroyTouchTypes();
         testUtils.destroyTestUsers(done);
     });
 

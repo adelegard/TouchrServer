@@ -30,7 +30,7 @@ exports.MethodNames = {
 
 exports.JobNames = {
     removeUnusedTouchTypes: "removeUnusedTouchTypes"
-}
+};
 
 // Strings (time)
 

@@ -576,14 +576,14 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
         response.error("touchTypeObjectId needs to be a string!");
         return;
     }
-    
+
     var userTo;
     var userTouchTypes;
     var userHasTouchType = false;
-    
+
     var userQuery = new Parse.Query(Parse.User);
     userQuery.equalTo(constants.ColumnObjectId, userToObjectId);
-    
+
     var queries = [
         userQuery.first({
             success: function(object) {
@@ -593,10 +593,10 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
                 return Parse.Promise.error("failed to lookup user with objectId: " + userToObjectId);
             }
         }),
-        queryHelper.getUserTouchTypesQueryForTouchTypeId(touchTypeObjectId).first({
+        queryHelper.getTouchTypeQueryForTouchTypeId(request.user, touchTypeObjectId).first({
             success: function(userTouchType) {
                 if (_.isUndefined(userTouchType)) {
-                    return Parse.Promise.error("user does not have this touch type: " + touchTypeObjectId);
+                    return Parse.Promise.error("touch type does not exist (or its private and user doesnt have access): " + touchTypeObjectId);
                 } else {
                     userHasTouchType = true;
                 }
@@ -608,7 +608,10 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
     ];
 
     Parse.Promise.when(queries).then(function() {
-        if (!userHasTouchType) return;
+        if (!userHasTouchType) {
+            response.error("touch type doesnt exist or its private");
+            return;
+        }
         var Touch = Parse.Object.extend(constants.TableTouch);
         var touch = new Touch();
         touch.set(constants.ColumnTouchUserFrom, request.user);
@@ -796,6 +799,15 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
     var userToObjectId = request.object.get(constants.ColumnTouchUserToObjectId);
     var userFromObjectId = request.object.get(constants.ColumnTouchUserFromObjectId);
 
+    if (!_.isString(userToObjectId) || userToObjectId.length === 0) {
+        console.log("userToObjectId must be a string!");
+        return;
+    }
+    if (!_.isString(userFromObjectId) || userFromObjectId.length === 0) {
+        console.log("userFromObjectId must be a string!");
+        return;
+    }
+
     // round the duration to one decimal place
     var durationMs = parseInt(request.object.get(constants.ColumnTouchDuration), 10);
 
@@ -817,15 +829,14 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
             console.log("Error: touchType not found with id: " + touchTypeId);
         }
     }).then(function() {
-        userQueryTo.first({
+        return Parse.Promise.when(userQueryTo.first({
             success: function(user) {
                 userTo = user;
             },
             error: function(error) {
                 console.log(error);
-                return;
             }
-        });
+        }));
     }).then(function() {
         userQueryFrom.first({
             success: function(user) {
@@ -866,6 +877,8 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
                 console.log(error);
             }
         });
+    }, function() {
+        console.log("something has gone horribly, horribly wrong");
     });
 });
 
