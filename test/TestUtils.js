@@ -8,7 +8,7 @@ var getTestUsernameWithPrefixAndNum = function(prefix, num) {
 };
 
 var usernamePrefix = 'apitest1',
-numUsers = 2;
+numUsers = 3;
 
 exports.onTestFailure = function(error) {
     console.log("error: " + error);

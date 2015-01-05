@@ -18,6 +18,7 @@ exports.MethodNames = {
     removeUserTouchType: "removeUserTouchType",
     purchaseTouches: "purchaseTouches",
     touchUser: "touchUser",
+    touchUsers: "touchUsers",
     unlockTouch: "unlockTouch",
     hideTouch: "hideTouch",
     deleteUser: "DeleteUser",

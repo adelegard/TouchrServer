@@ -561,6 +561,7 @@ Parse.Cloud.define(constants.MethodNames.getTouchesFromUser, function(request, r
 Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) {
 
     var userToObjectId      = _str.stripTags(request.params.userToObjectId);
+
     var durationMs          = request.params.durationMs;
     var touchTypeObjectId   = _str.stripTags(request.params.touchTypeObjectId);
 
@@ -580,11 +581,20 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
     var userTo;
     var userTouchTypes;
     var userHasTouchType = false;
+    var userIsFriend = false;
 
     var userQuery = new Parse.Query(Parse.User);
     userQuery.equalTo(constants.ColumnObjectId, userToObjectId);
 
     var queries = [
+        queryHelper.getQueryUserFriendWithUserIdForUser(userToObjectId, request.user).count({
+            success: function(count) {
+                userIsFriend = count === 1;
+            },
+            error: function() {
+                return Parse.Promise.error("failed to lookup user with userId: " + userToObjectId);
+            }
+        }),
         userQuery.first({
             success: function(object) {
                 userTo = object;
@@ -608,6 +618,10 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
     ];
 
     Parse.Promise.when(queries).then(function() {
+        if (!userIsFriend) {
+            response.error("userId: " + userToObjectId + " is not a friend");
+            return;
+        }
         if (!userHasTouchType) {
             response.error("touch type doesnt exist or its private");
             return;
@@ -626,6 +640,86 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
         }, function(error) {
             response.error("error saving touch: " + _.values(error));
         });
+    }, function(error) {
+        response.error("error: " + _.values(error));
+    });
+});
+
+Parse.Cloud.define(constants.MethodNames.touchUsers, function(request, response) {
+
+    var userToObjectIds     = request.params.userToObjectIds;
+    if (!_.isArray(userToObjectIds) || !_.isUndefined(_.find(userToObjectIds, function(userToObjectId) {
+        return !_.isString(userToObjectId) || userToObjectId.length === 0;
+    }))) {
+        response.error("userToObjectIds must be an array of strings");
+        return;
+    }
+
+    // clean up our objectIds
+    userToObjectIds = _.map(userToObjectIds, function(userToObjectId) {
+        return _str.stripTags(userToObjectId);
+    });
+
+    var durationMs          = request.params.durationMs;
+    var touchTypeObjectId   = _str.stripTags(request.params.touchTypeObjectId);
+
+    if (!_.isNumber(durationMs) || _.isNaN(durationMs) || durationMs <= 0) {
+        response.error("durationMs must be a number greater than zero!");
+        return;
+    }
+    if (!_.isString(touchTypeObjectId) || touchTypeObjectId.length === 0) {
+        response.error("touchTypeObjectId needs to be a string!");
+        return;
+    }
+
+    var userTos;
+    var userTouchTypes;
+    var userHasTouchType = false;
+
+    var userQuery = new Parse.Query(Parse.User);
+    userQuery.containedIn(constants.ColumnObjectId, userToObjectIds);
+
+    var queries = [
+        userQuery.find({
+            success: function(objects) {
+                userTos = objects;
+            },
+            error: function() {
+                return Parse.Promise.error("failed to lookup users with objectIds: " + userToObjectIds);
+            }
+        }),
+        queryHelper.getTouchTypeQueryForTouchTypeId(request.user, touchTypeObjectId).first({
+            success: function(userTouchType) {
+                if (_.isUndefined(userTouchType)) {
+                    return Parse.Promise.error("touch type does not exist (or its private and user doesnt have access): " + touchTypeObjectId);
+                } else {
+                    userHasTouchType = true;
+                }
+            },
+            error: function() {
+                return Parse.Promise.error("failed to get user touch types for user: " + userToObjectId);
+            }
+        })
+    ];
+
+    Parse.Promise.when(queries).then(function() {
+        if (!userHasTouchType) {
+            response.error("touch type doesnt exist or its private");
+            return;
+        }
+        return Parse.Promise.when(_.map(userTos, function(userTo) {
+            var Touch = Parse.Object.extend(constants.TableTouch);
+            var touch = new Touch();
+            touch.set(constants.ColumnTouchUserFrom, request.user);
+            touch.set(constants.ColumnTouchUserFromObjectId, request.user.id);
+            touch.set(constants.ColumnTouchUserTo, userTo);
+            touch.set(constants.ColumnTouchUserToObjectId, userTo.id);
+            touch.set(constants.ColumnTouchDuration, durationMs);
+            touch.set(constants.ColumnTouchTypeObjectId, touchTypeObjectId);
+            return touch.save();
+        }));
+    }).then(function() {
+        response.success("successfully touched users: " + userToObjectIds);
     }, function(error) {
         response.error("error: " + _.values(error));
     });

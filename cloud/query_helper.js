@@ -185,7 +185,7 @@ exports.getMatchingTouchTypeStepForTouchDuration = function(touchTypeSteps, dura
     });
 };
 
-exports.getQueryAllUserFriendsForUser = function(user, page) {
+var getQueryAllUserFriendsForUser = function(user) {
     var queryFriendRequestUser = new Parse.Query(Parse.Object.extend(constants.TableFriendRequest));
     queryFriendRequestUser.equalTo(constants.ColumnFriendRequestUserFriend, user);
     queryFriendRequestUser.equalTo(constants.ColumnFriendRequestStatus, constants.ColumnDataFriendRequestStatusAccepted);
@@ -202,8 +202,17 @@ exports.getQueryAllUserFriendsForUser = function(user, page) {
 
     var usersQuery = Parse.Query.or(usersRequestedQuery, usersFriendsQuery);
     usersQuery.ascending(constants.ColumnUserUsername);
+    return usersQuery;
+};
 
-    return getQueryWithPaging(usersQuery, page);
+exports.getQueryAllUserFriendsForUser = function(user, page) {
+    return getQueryWithPaging(getQueryAllUserFriendsForUser(user), page);
+};
+
+exports.getQueryUserFriendWithUserIdForUser = function(userId, user) {
+    var query = getQueryAllUserFriendsForUser(user);
+    query.equalTo(constants.ColumnObjectId, userId);
+    return query;
 };
 
 exports.getQueryTouchesToOrFrom = function(user, userFriendObjectId) {
