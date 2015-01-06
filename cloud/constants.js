@@ -57,6 +57,7 @@ exports.ColumnUpdatedAt = "updatedAt";
 
 exports.TableInstallation = "Installation";
 exports.ColumnInstallationUser = "user";
+exports.ColumnInstallationBadge = "badge";
 
 // TouchPurchase
 

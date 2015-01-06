@@ -956,14 +956,18 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
                 Parse.Push.send({
                     where: pushQuery, // Set our Installation query
                     data: {
-                        alert: _getPushNotificationMessage(userFromUsername, touchType, durationMs)
+                        alert: _getPushNotificationMessage(userFromUsername, touchType, durationMs),
+
+                        // This apparently works for Cloud Code, too. Thanks for telling us Parse!
+                        // http://blog.parse.com/2012/07/18/badge-management-for-ios/
+                        badge: "Increment"
                     }
-                    }, {
-                        success: function() {
-                            // Push was successful
-                        },
-                        error: function(error) {
-                            console.log("Got an error sending push notif: " + error.code + " : " + error.message);
+                }, {
+                    success: function() {
+                        // Push was successful
+                    },
+                    error: function(error) {
+                        console.log("Got an error sending push notif: " + error.code + " : " + error.message);
                     }
                 });
             },
