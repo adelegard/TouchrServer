@@ -33,21 +33,9 @@ exports.JobNames = {
     removeUnusedTouchTypes: "removeUnusedTouchTypes"
 };
 
-// Strings (time)
-
-exports.TimeTypeMinutes = 'minutes';
-
 // General
 
-exports.NumResultsPerPage = 10;
-
-exports.NumFreeTouches = 5;
-exports.LockDurationNum = 30;
-exports.LockDurationTimeType = exports.TimeTypeMinutes;
-
-exports.TouchTypeDefault = "touch";
-
-exports.SegueTouchPrompt = "touchPrompt";
+exports.NumResultsPerPage = 20;
 
 exports.ColumnObjectId = "objectId";
 exports.ColumnCreatedAt = "createdAt";
