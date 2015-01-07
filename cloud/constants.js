@@ -1,6 +1,15 @@
+var _ = require('underscore');
 
-// Cloud code methods
-exports.MethodNames = {
+// every release of our server code here must increment this number
+// and that increased number must match what the client app uses
+exports.VersionNumber = 1;
+
+var getVersionedMethodName = function(name) {
+    return name + "_" + exports.VersionNumber;
+};
+
+// Cloud code methods (with version numbers appended)
+exports.MethodNames = _.object(_.map({
     getFriendsAndTouches: "getFriendsAndTouches",
     getFriends: "getFriends",
     getFriendsWithTouches: "getFriendsWithTouches",
@@ -27,7 +36,9 @@ exports.MethodNames = {
     removeFriendRequestForUserId: "removeFriendRequestForUserId",
     setFriendRequestStatusAcceptedForUserId: "setFriendRequestStatusAcceptedForUserId",
     setFriendRequestStatusDeniedForUserId: "setFriendRequestStatusDeniedForUserId"
-};
+}, function (value, key) {
+    return [key, getVersionedMethodName(value)];
+}));
 
 exports.JobNames = {
     removeUnusedTouchTypes: "removeUnusedTouchTypes"
@@ -39,11 +50,7 @@ exports.TimeTypeMinutes = 'minutes';
 
 // General
 
-exports.NumResultsPerPage = 10;
-
-exports.NumFreeTouches = 5;
-exports.LockDurationNum = 30;
-exports.LockDurationTimeType = exports.TimeTypeMinutes;
+exports.NumResultsPerPage = 30;
 
 exports.TouchTypeDefault = "touch";
 

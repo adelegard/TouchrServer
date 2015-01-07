@@ -15,7 +15,6 @@ var getObjectAttributesWithObjectId = function(object) {
 
 // BACKGROUND JOBS
 
-
 Parse.Cloud.job(constants.JobNames.removeUnusedTouchTypes, function(request, status) {
     // Set up to modify user data
     Parse.Cloud.useMasterKey();
@@ -61,6 +60,8 @@ Parse.Cloud.job(constants.JobNames.removeUnusedTouchTypes, function(request, sta
         status.error("Uh oh, something went wrong.");
     });
 });
+
+// API METHODS
 
 /* Returns your friends as a list of UserTouch objects {PFUser, touchDuration}
  * UI - Friends
