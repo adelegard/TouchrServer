@@ -263,7 +263,33 @@ Parse.Cloud.define(constants.MethodNames.getCreatedTouchTypes, function(request,
         page = 1;
     }
 
-    queryHelper.getCreatedTouchTypesQuery(request.user, page).find({
+    queryHelper.getCreatedTouchTypesQuery(request.user.id, page, true).find({
+        success: function(objects) {
+            response.success(_.map(objects, function(object) {
+                return getObjectAttributesWithObjectId(object);
+            }));
+        },
+        error: function() {
+            response.error("failed to get touch types");
+        }
+    });
+});
+
+Parse.Cloud.define(constants.MethodNames.getUserCreatedTouchTypes, function(request, response) {
+    var page = parseInt(request.params.page, 10);
+    var userId = _str.stripTags(request.params.userId);
+
+    if (!_.isNumber(page) || _.isNaN(page)) {
+        page = 1;
+    }
+
+    if (!_.isString(userId) || userId.length === 0) {
+        response.error("userId not valid!");
+        return;
+    }
+
+    // only include private touch types if the requesting user
+    queryHelper.getCreatedTouchTypesQuery(userId, page, request.user.id === userId).find({
         success: function(objects) {
             response.success(_.map(objects, function(object) {
                 return getObjectAttributesWithObjectId(object);
@@ -346,12 +372,12 @@ Parse.Cloud.define(constants.MethodNames.getUserTouchTypes, function(request, re
 
 Parse.Cloud.define(constants.MethodNames.addUserTouchType, function(request, response) {
     var touchTypeObjectId = _str.stripTags(request.params.touchTypeObjectId);
-    
+
     if (!_.isString(touchTypeObjectId) || touchTypeObjectId.length === 0) {
         response.error("touchTypeObjectId not valid!");
         return;
     }
-    
+
     var touchType,
         orderNum,
         userHasTouchType = false,

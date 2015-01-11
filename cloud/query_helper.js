@@ -41,10 +41,15 @@ exports.getTouchTypesQuery = function(user, page) {
     return getQueryWithPaging(query, page);
 };
 
-exports.getCreatedTouchTypesQuery = function(user, page) {
+exports.getCreatedTouchTypesQuery = function(userId, page, includePrivate) {
     var query = new Parse.Query(Parse.Object.extend(constants.TableTouchType));
-    query.equalTo(constants.ColumnTouchTypeCreatedByUserId, user.id);
+    query.equalTo(constants.ColumnTouchTypeCreatedByUserId, userId);
     query.include(constants.ColumnTouchTypeCreatedByUser);
+
+    if (!includePrivate) {
+        query.equalTo(constants.ColumnTouchTypeIsPrivate, false);
+    }
+
     return getQueryWithPaging(query, page);
 };
 

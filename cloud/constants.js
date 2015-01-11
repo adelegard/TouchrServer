@@ -9,6 +9,7 @@ exports.MethodNames = {
     getTouchesFromUser: "getTouchesFromUser",
     getTouchTypes: "getTouchTypes",
     getCreatedTouchTypes: "getCreatedTouchTypes",
+    getUserCreatedTouchTypes: "getUserCreatedTouchTypes",
     getNewestTouchTypes: "getNewestTouchTypes",
     getPopularTouchTypes: "getPopularTouchTypes",
     getUserTouchTypes: "getUserTouchTypes",
