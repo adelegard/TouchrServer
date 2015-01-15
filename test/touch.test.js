@@ -66,7 +66,7 @@ describe('touch data setup', function() {
             var nonCurrentUser = _.find(users, function(user) {
                 return user.id !== Parse.User.current().id;
             });
-           Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: nonCurrentUser.id, durationMs: touchMsDefault, touchTypeObjectId: _.first(touchTypes).id}, {
+           Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: nonCurrentUser.id, stepIndex: 0, touchTypeObjectId: _.first(touchTypes).id}, {
                 success: function() {
                     testUtils.onTestFailure("shouldnt be able to touch a non-friend");
                 },
@@ -112,7 +112,7 @@ describe('touch data setup', function() {
 
         var touchMsDefault = 5000;
         it('can touch our friend', function(done) {
-           Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, durationMs: touchMsDefault, touchTypeObjectId: _.first(touchTypes).id}, {
+           Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, stepIndex: 0, touchTypeObjectId: _.first(touchTypes).id}, {
                 success: function() {
                     Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
                         success: function(userTouches) {
@@ -132,7 +132,7 @@ describe('touch data setup', function() {
         });
 
         it('can touch our friend with array method', function(done) {
-           Parse.Cloud.run(constants.MethodNames.touchUsers, {userToObjectIds: [_.first(friends).id], durationMs: touchMsDefault, touchTypeObjectId: _.first(touchTypes).id}, {
+           Parse.Cloud.run(constants.MethodNames.touchUsers, {userToObjectIds: [_.first(friends).id], stepIndex: 0, touchTypeObjectId: _.first(touchTypes).id}, {
                 success: function() {
                     Parse.Cloud.run(constants.MethodNames.getTouchesFromUser, {}, {
                         success: function(userTouches) {
@@ -152,7 +152,7 @@ describe('touch data setup', function() {
         });
 
         it('can indeed touch our friend with a touchType we dont have', function(done) {
-            Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, durationMs: 1, touchTypeObjectId: _.last(touchTypes).id}, {
+            Parse.Cloud.run(constants.MethodNames.touchUser, {userToObjectId: _.first(friends).id, stepIndex: 0, touchTypeObjectId: _.last(touchTypes).id}, {
                 success: function() {
                     done();
                 },
@@ -201,7 +201,7 @@ describe('touch data setup', function() {
                 userToObjectIds: _.map(friends, function(friend) {
                     return friend.id;
                 }),
-                durationMs: touchMsDefault,
+                stepIndex: 0,
                 touchTypeObjectId: _.first(touchTypes).id
             }, {
                 success: function() {

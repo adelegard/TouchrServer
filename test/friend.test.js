@@ -100,11 +100,9 @@ describe('friend tests data setup', function() {
                     //numTouchesFrom
                     //touchesToMs
                     //touchesFromMs
-                    _.keys(friendDetails).length.should.equal(4);
+                    _.keys(friendDetails).length.should.equal(2);
                     friendDetails.numTouchesTo.should.equal(0);
                     friendDetails.numTouchesFrom.should.equal(0);
-                    friendDetails.touchesToMs.should.equal(0);
-                    friendDetails.touchesFromMs.should.equal(0);
                     done();
                 },
                 error: function(error) {

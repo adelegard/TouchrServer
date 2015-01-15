@@ -146,10 +146,9 @@ exports.getTouchesToUserWithFriends = function(user, touchesToYou, friends, touc
             touchType: _.isUndefined(touchType) ? {} : {
                 bgColor: touchType.bgColor,
                 textColor: touchType.textColor,
-                step: exports.getMatchingTouchTypeStepForTouchDuration(touchType[constants.ColumnTouchTypeSteps], touchToYou.get(constants.ColumnTouchDuration))
+                step: touchType[constants.ColumnTouchTypeSteps][touchToYou.get(constants.ColumnTouchStepIndex)]
             },
-            touchCreatedAt: moment(touchToYou[constants.ColumnCreatedAt]).unix(),
-            touchDuration: touchToYou.get(constants.ColumnTouchDuration)
+            touchCreatedAt: moment(touchToYou[constants.ColumnCreatedAt]).unix()
         };
     }), user, friends);
 };
@@ -174,20 +173,11 @@ exports.getTouchesFromUserWithFriends = function(user, touchesFromYou, friends, 
             touchType: _.isUndefined(touchType) ? {} : {
                 bgColor: touchType.bgColor,
                 textColor: touchType.textColor,
-                step: exports.getMatchingTouchTypeStepForTouchDuration(touchType[constants.ColumnTouchTypeSteps], touchFromYou.get(constants.ColumnTouchDuration))
+                step: touchType[constants.ColumnTouchTypeSteps][touchFromYou.get(constants.ColumnTouchStepIndex)]
             },
-            touchCreatedAt: moment(touchFromYou[constants.ColumnCreatedAt]).unix(),
-            touchDuration: touchFromYou.get(constants.ColumnTouchDuration)
+            touchCreatedAt: moment(touchFromYou[constants.ColumnCreatedAt]).unix()
         };
     }), user, friends);
-};
-
-exports.getMatchingTouchTypeStepForTouchDuration = function(touchTypeSteps, durationMs) {
-    durationMs = parseInt(durationMs, 10);
-    return _.find(touchTypeSteps, function(touchTypeStep) {
-        var maxMs = parseInt(touchTypeStep.maxMs, 10);
-        return parseInt(touchTypeStep.minMs, 10) <= durationMs && (maxMs > durationMs || (!_.isNumber(maxMs) || _.isNaN(maxMs)));
-    });
 };
 
 var getQueryAllUserFriendsForUser = function(user) {

@@ -131,12 +131,6 @@ Parse.Cloud.define(constants.MethodNames.getFriendsWithTouches, function(request
     });
 });
 
-var getTotalMsOfTouches = function(touches) {
-    return _.reduce(touches, function(memo, touch) {
-        return memo + touch.get(constants.ColumnTouchDuration);
-    }, 0);
-};
-
 /*
  * UI - Friends List -> Slide to the right -> INFO
  */
@@ -154,9 +148,7 @@ Parse.Cloud.define(constants.MethodNames.getFriendDetails, function(request, res
             var touchesFrom = _.difference(touches, touchesTo);
             response.success({
                 numTouchesTo: touchesTo.length,
-                numTouchesFrom: touchesFrom.length,
-                touchesToMs: getTotalMsOfTouches(touchesTo),
-                touchesFromMs: getTotalMsOfTouches(touchesFrom)
+                numTouchesFrom: touchesFrom.length
             });
         },
         error: function(error) {
@@ -588,15 +580,15 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
 
     var userToObjectId      = _str.stripTags(request.params.userToObjectId);
 
-    var durationMs          = request.params.durationMs;
+    var stepIndex          = parseInt(request.params.stepIndex, 10);
     var touchTypeObjectId   = _str.stripTags(request.params.touchTypeObjectId);
 
     if (!_.isString(userToObjectId) || userToObjectId.length === 0) {
         response.error("userToObjectId needs to be a string!");
         return;
     }
-    if (!_.isNumber(durationMs) || _.isNaN(durationMs) || durationMs <= 0) {
-        response.error("durationMs must be a number greater than zero!");
+    if (!_.isNumber(stepIndex) || _.isNaN(stepIndex) || stepIndex < 0) {
+        response.error("stepIndex must be a non-negative number!");
         return;
     }
     if (!_.isString(touchTypeObjectId) || touchTypeObjectId.length === 0) {
@@ -630,9 +622,11 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
             }
         }),
         queryHelper.getTouchTypeQueryForTouchTypeId(request.user, touchTypeObjectId).first({
-            success: function(userTouchType) {
-                if (_.isUndefined(userTouchType)) {
+            success: function(touchType) {
+                if (_.isUndefined(touchType)) {
                     return Parse.Promise.error("touch type does not exist (or its private and user doesnt have access): " + touchTypeObjectId);
+                } else if (stepIndex > touchType.get(constants.ColumnTouchTypeSteps).length-1) {
+                    return Parse.Promise.error("stepIndex is larger than the number of steps!");
                 } else {
                     userHasTouchType = true;
                 }
@@ -658,7 +652,7 @@ Parse.Cloud.define(constants.MethodNames.touchUser, function(request, response) 
         touch.set(constants.ColumnTouchUserFromObjectId, request.user.id);
         touch.set(constants.ColumnTouchUserTo, userTo);
         touch.set(constants.ColumnTouchUserToObjectId, userToObjectId);
-        touch.set(constants.ColumnTouchDuration, durationMs);
+        touch.set(constants.ColumnTouchStepIndex, stepIndex);
         touch.set(constants.ColumnTouchTypeObjectId, touchTypeObjectId);
 
         touch.save().then(function(obj) {
@@ -686,11 +680,11 @@ Parse.Cloud.define(constants.MethodNames.touchUsers, function(request, response)
         return _str.stripTags(userToObjectId);
     });
 
-    var durationMs          = request.params.durationMs;
+    var stepIndex          = parseInt(request.params.stepIndex, 10);
     var touchTypeObjectId   = _str.stripTags(request.params.touchTypeObjectId);
 
-    if (!_.isNumber(durationMs) || _.isNaN(durationMs) || durationMs <= 0) {
-        response.error("durationMs must be a number greater than zero!");
+    if (!_.isNumber(stepIndex) || _.isNaN(stepIndex) || stepIndex < 0) {
+        response.error("stepIndex must be a non-negative number!");
         return;
     }
     if (!_.isString(touchTypeObjectId) || touchTypeObjectId.length === 0) {
@@ -718,6 +712,8 @@ Parse.Cloud.define(constants.MethodNames.touchUsers, function(request, response)
             success: function(userTouchType) {
                 if (_.isUndefined(userTouchType)) {
                     return Parse.Promise.error("touch type does not exist (or its private and user doesnt have access): " + touchTypeObjectId);
+                } else if (stepIndex > userTouchType.get(constants.ColumnTouchTypeSteps).length-1) {
+                    return Parse.Promise.error("stepIndex is larger than the number of steps!");
                 } else {
                     userHasTouchType = true;
                 }
@@ -740,7 +736,7 @@ Parse.Cloud.define(constants.MethodNames.touchUsers, function(request, response)
             touch.set(constants.ColumnTouchUserFromObjectId, request.user.id);
             touch.set(constants.ColumnTouchUserTo, userTo);
             touch.set(constants.ColumnTouchUserToObjectId, userTo.id);
-            touch.set(constants.ColumnTouchDuration, durationMs);
+            touch.set(constants.ColumnTouchStepIndex, stepIndex);
             touch.set(constants.ColumnTouchTypeObjectId, touchTypeObjectId);
             return touch.save();
         }));
@@ -765,79 +761,19 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
         request.object.set(constants.ColumnTouchTypeCreatedByUserId, Parse.User.current().id);
     }
 
-    var hasDurationMsSteps = !_.isUndefined(_.find(steps, function(step) {
-        return _.isNumber(step.durationMs);
-    }));
-    var hasMinMsSteps = !_.isUndefined(_.find(steps, function(step) {
-        return _.isNumber(step.minMs);
-    }));
+    _.each(steps, function(step) {
+        // only valid keys are these - remove the rest
+        step = _.pick(step, constants.ColumnTouchTypeStepKeyDurationMs, constants.ColumnTouchTypeStepKeyText);
+    });
 
-    if (hasDurationMsSteps && hasMinMsSteps) {
-        response.error("steps cannot use both durationMs and minMs");
-        return;
-    }
-
-    if (hasDurationMsSteps) {
-        var numStepsWithDurations = _.filter(steps, function(step) {
-            return _.isNumber(step.durationMs);
-        }).length;
-        if (numStepsWithDurations !== steps.length) {
-            response.error("number of durationMs steps doesnt match steps length!");
-            return;
+    var stepErrorMsgs = [];
+    _.each(steps, function(step, index) {
+        if (!_.isNumber(step[constants.ColumnTouchTypeStepKeyDurationMs])) {
+            stepErrorMsgs.push("step[" + index + "] has no durationMs - or its not a number");
         }
-        // convert durationMs's into minMs and maxMs
-        var totalDurationMs = 0;
-        _.each(steps, function(step, index) {
-            step.minMs = totalDurationMs;
-            if ((steps.length-1) !== index) {
-                // not the last step
-                step.maxMs = step.minMs + step.durationMs;
-            }
-            totalDurationMs += step.durationMs;
-            delete step.durationMs;
-        });
-        request.object.set(constants.ColumnTouchTypeSteps, steps);
-    }
-
-    var onlyOneStepWithMissingMaxMs = _.filter(steps, function(step) {
-        return _.isUndefined(step.maxMs);
-    }).length === 1;
-
-    var errorMsg;
-    var invalidStep = _.find(steps, function(step) {
-        if (!_.isNumber(step.minMs) || (!_.isUndefined(step.maxMs) && !_.isNumber(step.maxMs))) {
-            errorMsg = "--- no minMs or (no maxMs or it's not a number)";
-            return true;
+        if (!_.isString(step[constants.ColumnTouchTypeStepKeyText]) || step[constants.ColumnTouchTypeStepKeyText].length === 0) {
+            stepErrorMsgs.push("step[" + index + "] has no text");
         }
-        if (!_.isUndefined(step.maxMs) && step.minMs >= step.maxMs) {
-            errorMsg = "--- no maxMs or minMs >= maxMs ---";
-            return true;
-        }
-        if (!_.isString(step.textLong) || step.textLong.length === 0) {
-            errorMsg = "--- no textLong ---";
-            return true;
-        }
-        if (!_.isBoolean(isDefault)) {
-            errorMsg = "--- isDefault must be a boolean ---";
-            return true;
-        }
-        if (!_.isBoolean(isPrivate)) {
-            errorMsg = "--- isPrivate must be a boolean ---";
-            return true;
-        }
-        if (!_.isString(step.textLongAfter) || step.textLongAfter.length === 0) {
-            errorMsg = "--- no textLongAfter ---";
-            return true;
-        }
-        if (!_.isString(step.textNotif) || step.textNotif.length === 0) {
-            errorMsg = "--- no textNotif ---";
-            return true;
-        }
-        if (!_.isString(step.textShort) || step.textShort.length === 0) {
-            errorMsg = "--- no textShort ---";
-            return true;
-        }
-        return false;
     });
 
     var fullHexColorLength = 7;
@@ -846,14 +782,16 @@ Parse.Cloud.beforeSave(constants.TableTouchType, function(request, response) {
         response.error("name must be specified");
     } else if (!_.isString(bgColor) || bgColor.length !== fullHexColorLength || _.first(bgColor) !== poundSymbol) {
         response.error("bgColor must be a valid hex color");
+    } else if (!_.isBoolean(isDefault)) {
+        response.error("isDefault must be a boolean");
+    } else if (!_.isBoolean(isPrivate)) {
+        response.error("isPrivate must be a boolean");
     } else if (!_.isString(textColor) || textColor.length !== fullHexColorLength || _.first(textColor) !== poundSymbol) {
         response.error("textColor must be a valid hex color");
-    } else if (!_.isUndefined(invalidStep)) {
-        response.error(errorMsg);
+    } else if (stepErrorMsgs.length > 0) {
+        response.error(stepErrorMsgs.join(", "));
     } else if (!_.isArray(steps) || steps.length === 0) {
         response.error("steps cannot be empty");
-    } else if (!onlyOneStepWithMissingMaxMs) {
-        response.error("one of the steps must NOT have maxMs");
     } else {
         response.success();
     }
@@ -928,8 +866,7 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
         return;
     }
 
-    // round the duration to one decimal place
-    var durationMs = parseInt(request.object.get(constants.ColumnTouchDuration), 10);
+    var stepIndex = request.object.get(constants.ColumnTouchStepIndex);
 
     var userQueryTo = new Parse.Query(Parse.User);
     userQueryTo.equalTo(constants.ColumnObjectId, userToObjectId);
@@ -982,7 +919,7 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
                 Parse.Push.send({
                     where: pushQuery, // Set our Installation query
                     data: {
-                        alert: _getPushNotificationMessage(userFromUsername, touchType, durationMs),
+                        alert: _getPushNotificationMessage(userFromUsername, touchType, stepIndex),
 
                         // This apparently works for Cloud Code, too. Thanks for telling us Parse!
                         // http://blog.parse.com/2012/07/18/badge-management-for-ios/
@@ -1006,9 +943,9 @@ Parse.Cloud.afterSave(constants.TableTouch, function(request) {
     });
 });
 
-var _getPushNotificationMessage = function(userToUsername, touchType, durationMs) {
-    var touchTypeStep = queryHelper.getMatchingTouchTypeStepForTouchDuration(touchType.get(constants.ColumnTouchTypeSteps), durationMs);
-    return "from " + userToUsername + ": [" + touchType.get(constants.ColumnTouchTypeName) + "] " + touchTypeStep.textNotif;
+var _getPushNotificationMessage = function(userToUsername, touchType, stepIndex) {
+    var touchTypeStep = touchType.get(constants.ColumnTouchTypeSteps)[stepIndex];
+    return "from " + userToUsername + ": [" + touchType.get(constants.ColumnTouchTypeName) + "] " + touchTypeStep.text;
 };
 
 // get the FIRST unused Purchase Touch - and make it used

@@ -178,24 +178,15 @@ describe('Authentication', function() {
             touchType.set(constants.ColumnTouchTypeSteps, [
             {
                 "durationMs": 2000,
-                "textLong": "Give them a little hug",
-                "textLongAfter": "Give them a little hug",
-                "textNotif": "gave you a little hug",
-                "textShort": "Touch"
+                "text": "Give them a little hug"
             },
             {
                 "durationMs": 2000,
-                "textLong": "Give them a medium hug",
-                "textLongAfter": "Give them a medium hug",
-                "textNotif": "gave you a medium hug",
-                "textShort": "Poke"
+                "text": "Give them a medium hug"
             },
             {
                 "durationMs": 2000,
-                "textLong": "Give them a long hug",
-                "textLongAfter": "Give them a long hug",
-                "textNotif": "gave you a long hug",
-                "textShort": "Jab"
+                "text": "Give them a long hug"
             }
             ]);
 
@@ -207,7 +198,7 @@ describe('Authentication', function() {
                     done();
                 },
                 error: function(touchType, error) {
-                    exports.onTestFailure(error);
+                    testUtils.onTestFailure(error);
                 }
             });
         });

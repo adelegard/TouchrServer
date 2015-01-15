@@ -35,27 +35,16 @@ exports.setupData = function() {
     touchType.set(constants.ColumnTouchTypeIsPrivate, false);
     touchType.set(constants.ColumnTouchTypeSteps, [
     {
-        "maxMs": 2000,
-        "minMs": 0,
-        "textLong": "Give them a little touch",
-        "textLongAfter": "Give them a little touch",
-        "textNotif": "gave you a little touch",
-        "textShort": "Touch"
+        "durationMs": 2000,
+        "text": "Give them a little touch"
     },
     {
-        "maxMs": 4000,
-        "minMs": 2000,
-        "textLong": "Give them a little poke",
-        "textLongAfter": "Give them a little poke",
-        "textNotif": "gave you a little poke",
-        "textShort": "Poke"
+        "durationMs": 2000,
+        "text": "Give them a little poke"
     },
     {
-        "minMs": 4000,
-        "textLong": "Give them a jab",
-        "textLongAfter": "Give them a jab",
-        "textNotif": "gave you a jab",
-        "textShort": "Jab"
+        "durationMs": 2000,
+        "text": "Give them a jab"
     }
     ]);
 
@@ -78,24 +67,15 @@ exports.setupData = function() {
     touchType.set(constants.ColumnTouchTypeSteps, [
     {
         "durationMs": 2000,
-        "textLong": "Give them a little hug",
-        "textLongAfter": "Give them a little hug",
-        "textNotif": "gave you a little hug",
-        "textShort": "Touch"
+        "text": "Give them a little hug"
     },
     {
         "durationMs": 2000,
-        "textLong": "Give them a medium hug",
-        "textLongAfter": "Give them a medium hug",
-        "textNotif": "gave you a medium hug",
-        "textShort": "Poke"
+        "text": "Give them a medium hug"
     },
     {
         "durationMs": 2000,
-        "textLong": "Give them a long hug",
-        "textLongAfter": "Give them a long hug",
-        "textNotif": "gave you a long hug",
-        "textShort": "Jab"
+        "text": "Give them a long hug"
     }
     ]);
 
@@ -117,7 +97,7 @@ exports.setupData = function() {
             }
             userDeferred[num].resolve();
         };
-        
+
         var userDeferred = [];
         var userPromises = [];
         _.each(_.range(numUsers), function(num) {
@@ -125,7 +105,7 @@ exports.setupData = function() {
             userDeferred.push(defer);
             userPromises.push(defer.promise);
         });
-        
+
         Parse.Promise.when(userPromises).then(function() {
             // all users created
             setupDefer.resolve({
@@ -133,14 +113,14 @@ exports.setupData = function() {
                 touchTypes: touchTypes
             });
         });
-        
+
         _.each(_.range(numUsers), function(num) {
             var user = new Parse.User();
             var text = getTestUsernameWithPrefixAndNum(usernamePrefix, num);
             user.set("username", text);
             user.set("password", text);
             user.set("email", text + "@" + "test.com");
-            
+
             var doSignup = function() {
                 user.signUp(null, {
                 success: function(signedUpUser) {
